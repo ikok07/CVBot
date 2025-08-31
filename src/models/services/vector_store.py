@@ -1,8 +1,5 @@
 import os
-import pprint
-import time
 import uuid
-from argparse import ArgumentError
 from datetime import datetime
 from typing import TypedDict
 
@@ -10,11 +7,21 @@ import chromadb
 from chromadb import GetResult
 from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
 from pydantic import BaseModel
+from enum import Enum
+
+from src.models.services.text_splitter import ChunkingStrategy
+
+
+class SupportedFileType(str, Enum):
+    txt = "text/plain"
+    markdown = "text/markdown"
+    rtf="text/rtf"
+    pdf="application/pdf"
 
 class DocumentMetadata(TypedDict):
-    user_id: str
     filename: str
     filetype: str
+    chunking_strategy: ChunkingStrategy
     created_at: str
 
 class StoreDocument(BaseModel):
@@ -25,12 +32,13 @@ class StoreDocument(BaseModel):
 class StoreFullFile(BaseModel):
     filename: str
     filetype: str
+    chunking_strategy: ChunkingStrategy
     created_at: datetime
 
 class VectorStore:
     chroma_client = chromadb.CloudClient(
         api_key=os.getenv("CHROMADB_API_KEY"),
-        database="email-support-agent"
+        database=os.getenv("VECTOR_STORE_DATABASE")
     )
     embedding_function = OpenAIEmbeddingFunction(
         api_key=os.getenv("OPENAI_API_KEY"),
@@ -39,17 +47,15 @@ class VectorStore:
     )
 
     @staticmethod
-    def semantic_search(collection_name: str, texts: list[str], user_id: str, accept_threshold: float = 0.70) -> list[list[StoreDocument]]:
+    def semantic_search(collection_name: str, texts: list[str], accept_threshold: float = 0.70) -> list[list[StoreDocument]]:
         """ Makes a semantic search in the vector store
             :arg collection_name The name of the collection in the vector store
             :arg texts List of queries
-            :arg user_id The id of the user
             :arg accept_threshold Threshold above which a result will be included in the response
          """
         collection = VectorStore.chroma_client.get_collection(collection_name, embedding_function=VectorStore.embedding_function)
         query_results = collection.query(
             query_texts=texts,
-            where={"user_id": user_id},
             n_results=3,
             include=["documents", "distances", "metadatas"]
         )
@@ -66,6 +72,19 @@ class VectorStore:
         return final_results
 
     @staticmethod
+    def get_all_docs(collection_name: str, limit: int = 100) -> list[StoreDocument]:
+        collection = VectorStore.chroma_client.get_collection(collection_name)
+        docs: GetResult = collection.get(limit=limit)
+
+        return [
+            StoreDocument(
+                id=docs["ids"][index],
+                text=docs["documents"][index],
+                metadata=DocumentMetadata(**docs["metadatas"][index])
+            ) for index, doc in enumerate(docs["ids"])
+        ]
+
+    @staticmethod
     def get_docs_by_ids(ids: list[str], collection_name: str) -> list[StoreDocument]:
         collection = VectorStore.chroma_client.get_collection(collection_name)
         docs: GetResult = collection.get(ids=ids)
@@ -78,9 +97,9 @@ class VectorStore:
         ]
 
     @staticmethod
-    def get_docs_by_user_id(user_id: str, collection_name: str) -> list[StoreDocument]:
+    def get_docs_by_filename(filename: str, collection_name: str) -> list[StoreDocument]:
         collection = VectorStore.chroma_client.get_collection(collection_name)
-        docs: GetResult = collection.get(where={"user_id": user_id})
+        docs: GetResult = collection.get(where={"filename": filename})
 
         return [
             StoreDocument(
@@ -91,7 +110,7 @@ class VectorStore:
         ]
 
     @staticmethod
-    def insert_docs(docs: list[str], collection_name: str, filename: str, filetype: str, user_id: str, custom_ids: list[str] | None = None):
+    def insert_docs(docs: list[str], collection_name: str, filename: str, filetype: str, chunking_strategy: ChunkingStrategy, custom_ids: list[str] | None = None):
         if custom_ids and len(docs) != len(custom_ids):
             raise ValueError("Custom ids should be the same amount as the docs")
 
@@ -107,7 +126,7 @@ class VectorStore:
                 StoreDocument(
                     id=custom_ids[index] if custom_ids else str(uuid.uuid4()),
                     text=doc,
-                    metadata=DocumentMetadata(user_id=user_id, filename=filename, filetype=filetype, created_at=str(datetime.now()))
+                    metadata=DocumentMetadata(filename=filename, filetype=filetype, chunking_strategy=chunking_strategy, created_at=str(datetime.now()))
                 )
             )
 
@@ -134,19 +153,11 @@ class VectorStore:
         )
 
     @staticmethod
-    def delete_docs_by_user_id(user_id: str, collection_name: str):
-        collection = VectorStore.chroma_client.get_collection(collection_name)
-        collection.delete(
-            where={"user_id": user_id}
-        )
-
-    @staticmethod
-    def delete_document_by_name(filename: str, user_id: str, collection_name: str):
+    def delete_document_by_name(filename: str, collection_name: str):
         collection = VectorStore.chroma_client.get_collection(collection_name)
         collection.delete(
             where={"$and": [
-                {"filename": filename},
-                {"user_id": user_id}
+                {"filename": filename}
             ]}
         )
 

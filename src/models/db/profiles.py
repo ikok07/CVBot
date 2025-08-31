@@ -11,7 +11,7 @@ class Profile(Model):
     first_name = fields.TextField(null=False)
     last_name = fields.TextField(null=False)
     email = fields.TextField(null=False)
-    role = fields.CharEnumField(ProfileRole)
+    role = fields.CharEnumField(ProfileRole, default="user")
     created_at = fields.DatetimeField(auto_now_add=True)
 
     class Meta:

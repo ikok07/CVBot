@@ -5,11 +5,14 @@ description = "Add your description here"
 requires-python = ">=3.13"
 dependencies = [
     "aerich==0.9.1",
+    "asyncpg==0.30.0",
     "chromadb==1.0.20",
     "clerk-backend-api==3.3.0",
     "fastapi[standard]==0.116.1",
     "langchain-openai==0.3.32",
+    "langchain-text-splitters==0.3.10",
     "langgraph==0.6.6",
+    "pypdf2==3.0.1",
     "python-dotenv==1.1.1",
     "svix==1.75.0",
     "tortoise-orm==0.25.1",

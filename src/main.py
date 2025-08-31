@@ -1,6 +1,7 @@
-from contextlib import asynccontextmanager
-
 from dotenv import load_dotenv
+load_dotenv()
+
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from starlette.requests import Request
 from starlette.responses import JSONResponse
@@ -8,10 +9,10 @@ from tortoise import Tortoise
 
 from src.config import TORTOISE_CONFIG
 from src.models.errors.api import APIError
-
+from src.routes.versions import v1_routes
 
 @asynccontextmanager
-async def lifespan():
+async def lifespan(app: FastAPI):
     await Tortoise.init(
         config=TORTOISE_CONFIG
     )
@@ -21,9 +22,10 @@ async def lifespan():
     print("ORM De-Initialized")
     await Tortoise.close_connections()
 
-load_dotenv()
 
-app = FastAPI()
+app = FastAPI(lifespan=lifespan)
+
+app.include_router(v1_routes.router, prefix="/api/v1", tags=["Version 1"])
 
 @app.exception_handler(APIError)
 async def api_error_handler(req: Request, err: APIError):

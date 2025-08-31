@@ -1,9 +1,10 @@
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
 TORTOISE_CONFIG = {
     "connections": {
-        "default": {
-            "engine": "tortoise.backends.sqlite",
-            "credentials": {"file_path": "db/db.sqlite3"},
-        }
+        "default": os.getenv("DATABASE_URL")
     },
     "apps": {
         "cvbot": {
