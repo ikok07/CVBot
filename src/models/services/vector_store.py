@@ -47,16 +47,17 @@ class VectorStore:
     )
 
     @staticmethod
-    def semantic_search(collection_name: str, texts: list[str], accept_threshold: float = 0.70) -> list[list[StoreDocument]]:
+    def semantic_search(collection_name: str, texts: list[str], accept_threshold: float = 0.70, n_results: int = 3) -> list[list[StoreDocument]]:
         """ Makes a semantic search in the vector store
             :arg collection_name The name of the collection in the vector store
             :arg texts List of queries
             :arg accept_threshold Threshold above which a result will be included in the response
+            :arg n_results The number of results in the response
          """
         collection = VectorStore.chroma_client.get_collection(collection_name, embedding_function=VectorStore.embedding_function)
         query_results = collection.query(
             query_texts=texts,
-            n_results=3,
+            n_results=n_results,
             include=["documents", "distances", "metadatas"]
         )
 
