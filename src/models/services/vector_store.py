@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import TypedDict
 
 import chromadb
-from chromadb import GetResult
+from chromadb import GetResult, Settings
 from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
 from pydantic import BaseModel
 from enum import Enum
@@ -36,9 +36,16 @@ class StoreFullFile(BaseModel):
     created_at: datetime
 
 class VectorStore:
-    chroma_client = chromadb.CloudClient(
-        api_key=os.getenv("CHROMADB_API_KEY"),
-        database=os.getenv("VECTOR_STORE_DATABASE")
+    # chroma_client = chromadb.CloudClient(
+    #     api_key=os.getenv("CHROMADB_API_KEY"),
+    #     database=os.getenv("VECTOR_STORE_DATABASE")
+    #
+    #)
+    chroma_client = chromadb.Client(
+        settings=Settings(
+            chroma_server_host="localhost",
+            chroma_server_http_port=8000,
+        )
     )
     embedding_function = OpenAIEmbeddingFunction(
         api_key=os.getenv("OPENAI_API_KEY"),

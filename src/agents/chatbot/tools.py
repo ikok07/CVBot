@@ -1,5 +1,4 @@
 import os
-from typing import Annotated
 
 import requests
 from langchain_core.tools import tool

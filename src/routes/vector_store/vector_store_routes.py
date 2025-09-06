@@ -1,11 +1,9 @@
 import hashlib
 import io
 import os
-from datetime import datetime
 from typing import Annotated
 
 import PyPDF2
-import chromadb
 from clerk_backend_api import User
 from fastapi import APIRouter, UploadFile, Depends, Query, Form
 from langchain_core.documents import Document
