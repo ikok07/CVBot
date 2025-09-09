@@ -19,6 +19,7 @@ async def protect_dependency(request: Request) -> (User, Profile):
                 request=request,
                 options=AuthenticateRequestOptions()
             )
+
             if state.status == AuthStatus.SIGNED_IN:
                 user = sdk.users.get(user_id=state.payload["sub"])
                 if not user:

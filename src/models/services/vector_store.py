@@ -9,7 +9,6 @@ from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
 from pydantic import BaseModel
 from enum import Enum
 
-from src.models.services.text_splitter import ChunkingStrategy
 
 
 class SupportedFileType(str, Enum):
@@ -21,7 +20,6 @@ class SupportedFileType(str, Enum):
 class DocumentMetadata(TypedDict):
     filename: str
     filetype: str
-    chunking_strategy: ChunkingStrategy
     created_at: str
 
 class StoreDocument(BaseModel):
@@ -32,21 +30,20 @@ class StoreDocument(BaseModel):
 class StoreFullFile(BaseModel):
     filename: str
     filetype: str
-    chunking_strategy: ChunkingStrategy
     created_at: datetime
 
 class VectorStore:
-    # chroma_client = chromadb.CloudClient(
-    #     api_key=os.getenv("CHROMADB_API_KEY"),
-    #     database=os.getenv("VECTOR_STORE_DATABASE")
-    #
-    #)
-    chroma_client = chromadb.Client(
-        settings=Settings(
-            chroma_server_host="localhost",
-            chroma_server_http_port=8000,
-        )
+    chroma_client = chromadb.CloudClient(
+        api_key=os.getenv("CHROMADB_API_KEY"),
+        database=os.getenv("VECTOR_STORE_DATABASE")
+
     )
+    # chroma_client = chromadb.Client(
+    #     settings=Settings(
+    #         chroma_server_host="localhost",
+    #         chroma_server_http_port=8000,
+    #     )
+    # )
     embedding_function = OpenAIEmbeddingFunction(
         api_key=os.getenv("OPENAI_API_KEY"),
         model_name="text-embedding-3-small",
@@ -118,7 +115,7 @@ class VectorStore:
         ]
 
     @staticmethod
-    def insert_docs(docs: list[str], collection_name: str, filename: str, filetype: str, chunking_strategy: ChunkingStrategy, custom_ids: list[str] | None = None):
+    def insert_docs(docs: list[str], collection_name: str, filename: str, filetype: str, custom_ids: list[str] | None = None):
         if custom_ids and len(docs) != len(custom_ids):
             raise ValueError("Custom ids should be the same amount as the docs")
 
@@ -134,7 +131,7 @@ class VectorStore:
                 StoreDocument(
                     id=custom_ids[index] if custom_ids else str(uuid.uuid4()),
                     text=doc,
-                    metadata=DocumentMetadata(filename=filename, filetype=filetype, chunking_strategy=chunking_strategy, created_at=str(datetime.now()))
+                    metadata=DocumentMetadata(filename=filename, filetype=filetype, created_at=str(datetime.now()))
                 )
             )
 
