@@ -1,27 +1,34 @@
 import hashlib
-import io
 import os
-import tempfile
-from pathlib import Path
 from typing import Annotated
 
-import PyPDF2
 from clerk_backend_api import User
-from fastapi import APIRouter, UploadFile, Depends, Query, Form
-from langchain_core.documents import Document
+from fastapi import APIRouter, UploadFile, Depends, Query, Form, Body
 from starlette import status
 
+from src.models.body.vector_store import VectorStoreSemanticSearchBody
 from src.models.db.profiles import Profile
 from src.models.errors.api import APIError
 from src.models.responses.generic import GenericResponse
-from src.models.services.chunks_enricher import ChunksEnricher
 from src.models.services.document_parser import DocumentParser, DocumentParseFile
-from src.models.services.text_splitters.base_splitter import BaseSplitter
-from src.models.services.text_splitters.pdf_splitter import PDFSplitter
 from src.models.services.vector_store import VectorStore, StoreFullFile, SupportedFileType
 from src.routes.dependencies.protect import protect_dependency
 
 router = APIRouter()
+
+@router.post("/semantic-search")
+async def semantic_search(body: Annotated[VectorStoreSemanticSearchBody, Body()], userdata: tuple[User, Profile] = Depends(protect_dependency)):
+    try:
+        results = VectorStore.semantic_search(
+            collection_name=os.getenv("VECTOR_STORE_COLLECTION"),
+            texts=body.queries,
+            n_results=5
+        )
+
+        return GenericResponse(data={"results": [[doc.model_dump() for doc in result] for result in results]})
+    except Exception as e:
+        print(e)
+        raise APIError(status.HTTP_500_INTERNAL_SERVER_ERROR, "Unknown error occurred")
 
 @router.get("/retrieve-files")
 async def retrieve_files(userdata: tuple[User, Profile] = Depends(protect_dependency)):
@@ -50,7 +57,7 @@ async def retrieve_files(userdata: tuple[User, Profile] = Depends(protect_depend
         raise APIError(status.HTTP_500_INTERNAL_SERVER_ERROR, "Unknown error occurred")
 
 @router.post("/store-files")
-async def store_files(files: list[UploadFile], semantic_split: Annotated[bool, Form()] = False, userdata: tuple[User, Profile] = Depends(protect_dependency)):
+async def store_files(files: list[UploadFile], userdata: tuple[User, Profile] = Depends(protect_dependency)):
 
     # Check for file support before doing anything
     for file in files:

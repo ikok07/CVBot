@@ -25,14 +25,14 @@ async def invoke_chatbot(body: Annotated[ChatbotInvokeBody, Body()]):
             message="Message should not be empty!"
         )
 
-    graph = await chatbot_graph()
+    graph, tracer = await chatbot_graph(session_id=body.session_id)
     async def generate_response():
         async for chunk, metadata in graph.astream(
                 State(
                     messages=[HumanMessage(content=body.message)],
                 ),
                 stream_mode="messages",
-                config={"configurable": {"thread_id": body.session_id}}
+                config={"configurable": {"thread_id": body.session_id}, "callbacks": [tracer]},
         ):
             if not isinstance(chunk, AIMessageChunk):
                 continue

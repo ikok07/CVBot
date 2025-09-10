@@ -2,13 +2,14 @@ import os
 
 import requests
 from langchain_core.tools import tool
+from opik import track
 
 from src.models.services.vector_store import VectorStore
 
 @tool
 def send_notification_tool(text: str):
     """
-    Use this tool to send a notification when you couldn't answer some question
+    Use this tool to send a notification after you search the vector store, and you couldn't answer some question
     :param text: Message informing me about the specific question that couldn't be answered
     """
     try:
@@ -20,9 +21,13 @@ def send_notification_tool(text: str):
 @tool
 def semantic_search(queries: list[str]):
     """
-    Use this tool when you want to search more information about something in the vector store
+    Search for relevant information in the knowledge base using semantic similarity.
 
-    :param queries: The queries which will be used for semantic search in the vector store
+    Use this tool FIRST when the user asks questions that might be answered by stored documents.
+    Always try this tool before using send_notification_tool.
+
+    :param queries: List of search queries to find relevant information.
+                   Use multiple related queries to get comprehensive results.
     """
 
     results = VectorStore.semantic_search(os.getenv("VECTOR_STORE_COLLECTION"), queries)
