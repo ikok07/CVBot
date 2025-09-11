@@ -77,7 +77,7 @@ class VectorStore:
             for id, distance, document, metadata in zip(query_results["ids"][index], query_results["distances"][index], query_results["documents"][index], query_results["metadatas"][index]):
                 if distance < accept_threshold:
                     continue
-                results.append(StoreDocument(id=id, text=document, metadata=DocumentMetadata(**metadata)))
+                results.append(StoreDocument(id=id, text=document, embedding=None, metadata=DocumentMetadata(**metadata)))
             final_results.append(results)
 
         return final_results
