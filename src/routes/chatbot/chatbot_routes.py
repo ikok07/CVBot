@@ -13,6 +13,7 @@ from src.models.app_state import app_state
 from src.models.body.chatbot import ChatbotInvokeBody
 from src.models.errors.api import APIError
 from src.models.responses.generic import GenericResponse
+from src.utils.message_to_role import message_to_role
 
 router = APIRouter()
 
@@ -48,15 +49,16 @@ async def invoke_chatbot(body: Annotated[ChatbotInvokeBody, Body()]):
         media_type="text/plain"
     )
 
+# TODO: Exclude tool messages
 @router.get("/history")
 async def get_history(session_id: Annotated[str, Query()]):
     messages = await app_state.memory.aget({"configurable": {"thread_id": session_id}})
-    print()
+
     if not messages:
         raise APIError(status_code=status.HTTP_404_NOT_FOUND, message="Session not found!")
 
     messages_dict = [
-        {"role": "user" if isinstance(message, HumanMessage) else "assistant", "content": message.content}
+        {"role": message_to_role(message), "content": message.content}
         for message in messages["channel_values"]["messages"]
     ]
 
