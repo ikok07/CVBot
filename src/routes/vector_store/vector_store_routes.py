@@ -49,6 +49,7 @@ async def retrieve_files(userdata: tuple[User, Profile] = Depends(protect_depend
             data=[dict(file) for file in full_files]
         )
     except ValueError as e:
+        print(e)
         raise APIError(status.HTTP_500_INTERNAL_SERVER_ERROR, "Collection not found")
     except Exception as e:
         print(e)

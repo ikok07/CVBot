@@ -2,6 +2,7 @@ import os
 
 from dotenv import load_dotenv
 from psycopg import AsyncConnection
+from starlette import status
 
 load_dotenv()
 
@@ -57,4 +58,11 @@ async def api_error_handler(req: Request, err: APIError):
     return JSONResponse(
         status_code=err.status_code,
         content={"error": err.message}
+    )
+
+@app.exception_handler(Exception)
+async def generic_error_handler(req: Request, err: Exception):
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={"error": str(err)}
     )
