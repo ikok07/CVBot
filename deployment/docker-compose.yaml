@@ -1,20 +1,4 @@
 services:
-  nginx:
-    image: nginx:latest
-    container_name: nginx
-    ports:
-      - "8081:80"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-    networks:
-      - app-network
-    restart: unless-stopped
-    healthcheck:
-      test: [ "CMD", "nginx", "-t" ]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-
   postgresql:
     image: postgres
     restart: unless-stopped
@@ -56,6 +40,24 @@ services:
     depends_on:
       - chromadb
       - postgresql
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    ports:
+      - "8081:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - app-network
+    restart: unless-stopped
+    depends_on:
+      - backend
+    healthcheck:
+      test: [ "CMD", "nginx", "-t" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
 networks:
   app-network:
