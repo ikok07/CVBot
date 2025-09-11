@@ -18,6 +18,8 @@ services:
     image: chromadb/chroma
     restart: unless-stopped
     container_name: chromadb
+    environment:
+      - ANONYMIZED_TELEMETRY=False
     env_file: .env
     volumes:
       - ./chroma/data:/data
