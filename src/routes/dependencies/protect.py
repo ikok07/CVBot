@@ -20,6 +20,7 @@ async def protect_dependency(request: Request) -> (User, Profile):
                 options=AuthenticateRequestOptions()
             )
             print("Clerk authentication finished")
+            print(state)
             if state.status == AuthStatus.SIGNED_IN:
                 user = sdk.users.get(user_id=state.payload["sub"])
                 print("Clerk user checked")
