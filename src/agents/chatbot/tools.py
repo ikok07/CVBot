@@ -26,6 +26,8 @@ def semantic_search(queries: list[str]):
     Use this tool FIRST when the user asks questions that might be answered by stored documents.
     Always try this tool before using send_notification_tool.
 
+    The search queries SHOULD be only in ENGLISH.
+
     :param queries: List of search queries to find relevant information.
                    Use multiple related queries to get comprehensive results.
     """

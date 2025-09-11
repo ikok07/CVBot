@@ -1,15 +1,16 @@
 import os
 
-import asyncpg
-import psycopg_pool
 from dotenv import load_dotenv
+from psycopg import AsyncConnection
+
+load_dotenv()
+
+from src.models.services.vector_store import VectorStore
+from src.agents.chatbot.agent import chatbot_graph
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from opik import configure
 from psycopg_pool import AsyncConnectionPool
-
 from src.models.app_state import app_state
-
-load_dotenv()
 
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
@@ -23,10 +24,12 @@ from src.routes.versions import v1_routes
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    app_state.db_pool = AsyncConnectionPool(conninfo=os.getenv("DATABASE_URL"))
-    await app_state.db_pool.open()
+    app_state.db_conn = await AsyncConnection.connect(conninfo=os.getenv("DATABASE_URL"), autocommit=True)
+    app_state.memory = AsyncPostgresSaver(conn=app_state.db_conn)
 
-    app_state.memory = AsyncPostgresSaver(conn=app_state.db_pool)
+    graph, tracer = await chatbot_graph()
+    app_state.graph = graph
+    app_state.tracer = tracer
 
     await app_state.memory.setup()
     await Tortoise.init(
@@ -39,9 +42,10 @@ async def lifespan(app: FastAPI):
     print("ORM De-Initialized")
 
     await Tortoise.close_connections()
-    await app_state.db_pool.close()
+    await app_state.db_conn.close()
 
-configure(api_key=os.getenv("OPIK_API_KEY"), workspace=os.getenv("OPIK_WORKSPACE_NAME"))
+configure(api_key=os.getenv("OPIK_API_KEY"), workspace=os.getenv("OPIK_WORKSPACE_NAME"), force=True)
+VectorStore.init()
 
 app = FastAPI(lifespan=lifespan)
 

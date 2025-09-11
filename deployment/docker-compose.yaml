@@ -1,0 +1,62 @@
+services:
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    ports:
+      - "8081:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - app-network
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "nginx", "-t" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  postgresql:
+    image: postgres
+    restart: unless-stopped
+    env_file: .env
+    container_name: postgresql
+    volumes:
+      - ./postgresql/data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  chromadb:
+    image: chromadb/chroma
+    restart: unless-stopped
+    container_name: chromadb
+    env_file: .env
+    volumes:
+      - ./chroma/data:/data
+      - ./chroma/config.yaml:/config.yaml
+    networks:
+      - app-network
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f curl http://localhost:8000/api/v2/heartbeat || exit 1" ]
+      interval: 10s
+      retries: 5
+
+  backend:
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile
+    container_name: backend
+    env_file: .env
+    networks:
+      - app-network
+    depends_on:
+      - chromadb
+      - postgresql
+
+networks:
+  app-network:
+    driver: bridge

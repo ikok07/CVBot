@@ -1,11 +1,13 @@
 import os
 import uuid
 from datetime import datetime
-from typing import TypedDict
+from typing import TypedDict, Optional
 
 import chromadb
-from chromadb import GetResult, Settings
+from dataclasses import dataclass
+from chromadb import GetResult
 from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
+from numpy import ndarray
 from pydantic import BaseModel
 from enum import Enum
 
@@ -22,9 +24,11 @@ class DocumentMetadata(TypedDict):
     filetype: str
     created_at: str
 
-class StoreDocument(BaseModel):
+@dataclass
+class StoreDocument:
     id: str
     text: str
+    embedding: Optional[ndarray]
     metadata: DocumentMetadata
 
 class StoreFullFile(BaseModel):
@@ -33,22 +37,24 @@ class StoreFullFile(BaseModel):
     created_at: datetime
 
 class VectorStore:
-    chroma_client = chromadb.CloudClient(
-        api_key=os.getenv("CHROMADB_API_KEY"),
-        database=os.getenv("VECTOR_STORE_DATABASE")
-
-    )
-    # chroma_client = chromadb.Client(
-    #     settings=Settings(
-    #         chroma_server_host="localhost",
-    #         chroma_server_http_port=8000,
-    #     )
+    # chroma_client = chromadb.CloudClient(
+    #     api_key=os.getenv("CHROMADB_API_KEY"),
+    #     database=os.getenv("VECTOR_STORE_DATABASE")
     # )
+    chroma_client = chromadb.HttpClient(
+        host=os.getenv("CHROMA_HOST"),
+        port=int(os.getenv("CHROMA_PORT")),
+    )
+
     embedding_function = OpenAIEmbeddingFunction(
         api_key=os.getenv("OPENAI_API_KEY"),
         model_name="text-embedding-3-small",
         dimensions=1024
     )
+
+    @staticmethod
+    def init():
+        VectorStore.chroma_client.get_or_create_collection(os.getenv("VECTOR_STORE_COLLECTION"), embedding_function=VectorStore.embedding_function)
 
     @staticmethod
     def semantic_search(collection_name: str, texts: list[str], accept_threshold: float = 0.70, n_results: int = 3) -> list[list[StoreDocument]]:
@@ -77,39 +83,54 @@ class VectorStore:
         return final_results
 
     @staticmethod
-    def get_all_docs(collection_name: str, limit: int = 100) -> list[StoreDocument]:
+    def get_all_docs(collection_name: str, limit: int = 100, include_embeddings = False) -> list[StoreDocument]:
         collection = VectorStore.chroma_client.get_collection(collection_name)
-        docs: GetResult = collection.get(limit=limit)
+        includes = ["documents", "metadatas"]
+        if include_embeddings:
+            includes += ["embeddings"]
+
+        docs: GetResult = collection.get(limit=limit, include=includes)
 
         return [
             StoreDocument(
                 id=docs["ids"][index],
                 text=docs["documents"][index],
+                embedding=docs["embeddings"][index] if docs.get("embeddings") is not None else None,
                 metadata=DocumentMetadata(**docs["metadatas"][index])
             ) for index, doc in enumerate(docs["ids"])
         ]
 
     @staticmethod
-    def get_docs_by_ids(ids: list[str], collection_name: str) -> list[StoreDocument]:
+    def get_docs_by_ids(ids: list[str], collection_name: str, include_embeddings = False) -> list[StoreDocument]:
         collection = VectorStore.chroma_client.get_collection(collection_name)
-        docs: GetResult = collection.get(ids=ids)
+        includes = ["documents", "metadatas"]
+        if include_embeddings:
+            includes += ["embeddings"]
+
+        docs: GetResult = collection.get(ids=ids, include=includes)
         return [
             StoreDocument(
                 id=docs["ids"][index],
                 text=docs["documents"][index],
+                embedding=docs["embeddings"][index] if docs.get("embeddings") is not None else None,
                 metadata=DocumentMetadata(**docs["metadatas"][index])
             ) for index, doc in enumerate(docs)
         ]
 
     @staticmethod
-    def get_docs_by_filename(filename: str, collection_name: str) -> list[StoreDocument]:
+    def get_docs_by_filename(filename: str, collection_name: str, include_embeddings = False) -> list[StoreDocument]:
         collection = VectorStore.chroma_client.get_collection(collection_name)
-        docs: GetResult = collection.get(where={"filename": filename})
+        includes = ["documents", "metadatas"]
+        if include_embeddings:
+            includes += ["embeddings"]
+
+        docs: GetResult = collection.get(where={"filename": filename}, include=includes)
 
         return [
             StoreDocument(
                 id=docs["ids"][index],
                 text=docs["documents"][index],
+                embedding=docs["embeddings"][index] if docs.get("embeddings") is not None else None,
                 metadata=DocumentMetadata(**docs["metadatas"][index])
             ) for index, doc in enumerate(docs["documents"])
         ]

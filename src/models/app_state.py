@@ -1,13 +1,15 @@
 from dataclasses import dataclass
 
-import asyncpg
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
-from psycopg_pool import AsyncConnectionPool
+from langgraph.graph.state import CompiledStateGraph
+from opik.integrations.langchain import OpikTracer
 
 
 @dataclass
 class AppState:
-    db_pool = None
+    db_conn = None
     memory: AsyncPostgresSaver = None
+    graph: CompiledStateGraph = None
+    tracer: OpikTracer = None
 
 app_state = AppState()

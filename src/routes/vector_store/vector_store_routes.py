@@ -41,7 +41,6 @@ async def retrieve_files(userdata: tuple[User, Profile] = Depends(protect_depend
                     StoreFullFile(
                         filename=store_document.metadata["filename"],
                         filetype=store_document.metadata["filetype"],
-                        chunking_strategy=store_document.metadata["chunking_strategy"],
                         created_at=store_document.metadata["created_at"]
                     )
                 )
@@ -50,8 +49,23 @@ async def retrieve_files(userdata: tuple[User, Profile] = Depends(protect_depend
             data=[dict(file) for file in full_files]
         )
     except ValueError as e:
-        print("Collection not found!")
         raise APIError(status.HTTP_500_INTERNAL_SERVER_ERROR, "Collection not found")
+    except Exception as e:
+        print(e)
+        raise APIError(status.HTTP_500_INTERNAL_SERVER_ERROR, "Unknown error occurred")
+
+@router.get("/retrieve-embeddings")
+async def retrieve_embeddings(filename: Annotated[str, Query()], userdata: tuple[User, Profile] = Depends(protect_dependency)):
+    try:
+        store_docs = VectorStore.get_docs_by_filename(filename=filename, collection_name=os.getenv("VECTOR_STORE_COLLECTION"), include_embeddings=True)
+
+        return GenericResponse(data=[
+            {"id": store_doc.id, "document": store_doc.text, "embeddings": store_doc.embedding.tolist()}
+            for store_doc in store_docs
+        ])
+    except ValueError as e:
+        print(e)
+        raise APIError(status_code=status.HTTP_404_NOT_FOUND, message="Collection not found")
     except Exception as e:
         print(e)
         raise APIError(status.HTTP_500_INTERNAL_SERVER_ERROR, "Unknown error occurred")
