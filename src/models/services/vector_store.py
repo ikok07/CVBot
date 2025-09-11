@@ -152,6 +152,7 @@ class VectorStore:
                 StoreDocument(
                     id=custom_ids[index] if custom_ids else str(uuid.uuid4()),
                     text=doc,
+                    embedding=None,
                     metadata=DocumentMetadata(filename=filename, filetype=filetype, created_at=str(datetime.now()))
                 )
             )
