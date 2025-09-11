@@ -36,4 +36,4 @@ async def protect_dependency(request: Request) -> (User, Profile):
         raise APIError(status_code=status.HTTP_401_UNAUTHORIZED, message="Unauthorized")
     except Exception as e:
         print(e)
-        raise APIError(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        raise APIError(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, message="Something went wrong during authentication")
