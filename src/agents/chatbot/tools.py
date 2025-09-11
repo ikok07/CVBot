@@ -1,4 +1,5 @@
 import os
+from dataclasses import asdict
 
 import requests
 from langchain_core.tools import tool
@@ -36,7 +37,7 @@ def semantic_search(queries: list[str]):
 
     return [{
         "query": queries[index],
-        "results": [doc.model_dump() for doc in result]
+        "results": [asdict(doc) for doc in result]
     } for index, result in enumerate(results)]
 
 tools = [send_notification_tool, semantic_search]
