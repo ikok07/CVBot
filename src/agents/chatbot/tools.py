@@ -3,24 +3,26 @@ from dataclasses import asdict
 
 import requests
 from langchain_core.tools import tool
-from opik import track
 
+from src.models.agent.agent_source import AgentSource
+from src.models.agent.custom_tool_response import CustomToolResponse
+from src.models.db import Project, ProjectSchema
 from src.models.services.vector_store import VectorStore
 
 @tool
-def send_notification_tool(text: str):
+def send_notification_tool(text: str) -> CustomToolResponse:
     """
     Use this tool to send a notification after you search the vector store, and you couldn't answer some question
     :param text: Message informing me about the specific question that couldn't be answered
     """
     try:
         requests.post(os.getenv("PUSHOVER_URL"), data={"token": os.getenv("PUSHOVER_TOKEN"), "user": os.getenv("PUSHOVER_USER"), "message": text})
-        return {"status": "success"}
+        return CustomToolResponse(data={"status": "success"}, sources=None)
     except Exception as e:
-        return {"status": "fail", "error": e}
+        return CustomToolResponse(data={"status": "fail", "error": e}, sources=None)
 
 @tool
-def semantic_search(queries: list[str]):
+def semantic_search(queries: list[str]) -> CustomToolResponse:
     """
     Search for relevant information in the knowledge base using semantic similarity.
 
@@ -35,9 +37,26 @@ def semantic_search(queries: list[str]):
 
     results = VectorStore.semantic_search(os.getenv("VECTOR_STORE_COLLECTION"), queries)
 
-    return [{
-        "query": queries[index],
-        "results": [asdict(doc) for doc in result]
-    } for index, result in enumerate(results)]
+    return CustomToolResponse(
+        data=[{
+            "query": queries[index],
+            "results": [asdict(doc) for doc in result]
+        } for index, result in enumerate(results)],
+        sources=[AgentSource(name="Vector Store", url=None)]
+    )
 
-tools = [send_notification_tool, semantic_search]
+@tool
+async def get_all_projects() -> CustomToolResponse:
+    """
+    Get all projects that I have developed.
+
+    Always use tool before providing information about some project
+    :return: A list of projects in JSON format
+    """
+
+    return CustomToolResponse(
+        data=[(await ProjectSchema.from_tortoise_orm(project)).model_dump() for project in await Project.all()],
+        sources=[AgentSource(name="Database", url=None)]
+    )
+
+tools = [send_notification_tool, semantic_search, get_all_projects]
