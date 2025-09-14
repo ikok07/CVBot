@@ -1,6 +1,8 @@
 from enum import Enum
 
 from tortoise import Model, fields
+from tortoise.contrib.pydantic import pydantic_model_creator
+
 
 class ProfileRole(Enum):
     user = "user"
@@ -16,3 +18,5 @@ class Profile(Model):
 
     class Meta:
         table = "profiles"
+
+ProjectSchema = pydantic_model_creator(Profile, name="ProfileSchema")

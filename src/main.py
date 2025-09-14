@@ -10,7 +10,6 @@ from src.models.services.vector_store import VectorStore
 from src.agents.chatbot.agent import chatbot_graph
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from opik import configure
-from psycopg_pool import AsyncConnectionPool
 from src.models.app_state import app_state
 
 from contextlib import asynccontextmanager
