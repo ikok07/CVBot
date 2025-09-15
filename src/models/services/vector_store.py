@@ -183,9 +183,7 @@ class VectorStore:
     def delete_document_by_name(filename: str, collection_name: str):
         collection = VectorStore.chroma_client.get_collection(collection_name)
         collection.delete(
-            where={"$and": [
-                {"filename": filename}
-            ]}
+            where={"filename": filename}
         )
 
 

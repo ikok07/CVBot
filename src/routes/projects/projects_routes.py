@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Body
 from starlette import status
 from tortoise.exceptions import DoesNotExist
 
-from src.models.db import Profile, Project, ProjectSchema
+from src.models.db import Profile, Project, ProjectSchema, ProjectInsert
 from src.models.errors.api import APIError
 from src.models.responses.generic import GenericResponse
 from src.routes.dependencies.protect import protect_dependency
@@ -18,10 +18,10 @@ async def get_all_projects(userdata: tuple[User, Profile] = Depends(protect_depe
     return GenericResponse(data=[(await ProjectSchema.from_tortoise_orm(project)).model_dump() for project in projects])
 
 @router.post("/")
-async def insert_product(project: Annotated[ProjectSchema, Body()], userdata: tuple[User, Profile] = Depends(protect_dependency)):
-    db_project = Project(**project.model_dump())
+async def insert_product(project: Annotated[ProjectInsert, Body()], userdata: tuple[User, Profile] = Depends(protect_dependency)):
+    db_project = Project(**project)
     await db_project.save()
-    return GenericResponse(data=project.model_dump())
+    return GenericResponse(data=(await ProjectSchema.from_tortoise_orm(db_project)).model_dump())
 
 @router.delete("/{project_id}")
 async def delete_product(project_id: str, userdata: tuple[User, Profile] = Depends(protect_dependency)):

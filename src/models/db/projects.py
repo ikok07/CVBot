@@ -1,4 +1,5 @@
 import uuid
+from typing import Optional, TypedDict
 
 from tortoise import Model, fields
 from tortoise.contrib.pydantic import pydantic_model_creator
@@ -15,4 +16,10 @@ class Project(Model):
     class Meta:
         table = "projects"
 
-ProjectSchema = pydantic_model_creator(Project, name="ProjectSchema", exclude=tuple(["id", "created_at"]))
+class ProjectInsert(TypedDict):
+    name: str
+    description: str
+    github_url: Optional[str]
+    live_url: Optional[str]
+
+ProjectSchema = pydantic_model_creator(Project, name="ProjectSchema")

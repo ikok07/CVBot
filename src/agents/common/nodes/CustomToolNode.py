@@ -25,7 +25,7 @@ class CustomToolNode:
             )
             outputs.append(
                 ToolMessage(
-                    content=json.dumps(tool_result.get("data")),
+                    content=json.dumps(tool_result.get("data"), default=str),
                     name=tool_call["name"],
                     tool_call_id=tool_call["id"],
                 )

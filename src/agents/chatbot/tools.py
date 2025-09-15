@@ -12,7 +12,7 @@ from src.models.services.vector_store import VectorStore
 @tool
 def send_notification_tool(text: str) -> CustomToolResponse:
     """
-    Use this tool to send a notification after you search the vector store, and you couldn't answer some question
+    Use this tool to send a notification in bulgarian
     :param text: Message informing me about the specific question that couldn't be answered
     """
     try:
