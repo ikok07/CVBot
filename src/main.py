@@ -3,6 +3,7 @@ import os
 from dotenv import load_dotenv
 from psycopg import AsyncConnection
 from starlette import status
+from starlette.middleware.cors import CORSMiddleware
 
 load_dotenv()
 
@@ -48,6 +49,13 @@ configure(api_key=os.getenv("OPIK_API_KEY"), workspace=os.getenv("OPIK_WORKSPACE
 VectorStore.init()
 
 app = FastAPI(lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
 
 app.include_router(v1_routes.router, prefix="/api/v1", tags=["Version 1"])
 
