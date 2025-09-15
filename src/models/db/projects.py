@@ -5,7 +5,7 @@ from tortoise.contrib.pydantic import pydantic_model_creator
 
 
 class Project(Model):
-    id = fields.TextField(primary_key=True, default=str(uuid.uuid4()))
+    id = fields.TextField(primary_key=True, default=lambda: str(uuid.uuid4()))
     name = fields.CharField(null=False, unique=True, max_length=255)
     description = fields.TextField(null=False)
     github_url = fields.TextField(null=True)
