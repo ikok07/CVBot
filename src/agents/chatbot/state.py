@@ -6,5 +6,5 @@ from src.models.agent.agent_source import AgentSource
 from operator import add
 
 class State(MessagesState):
-    sources: Annotated[list[AgentSource], add]
+    sources: list[AgentSource]
     pass

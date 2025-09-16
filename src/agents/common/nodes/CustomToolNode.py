@@ -31,6 +31,6 @@ class CustomToolNode:
                 )
             )
             if tool_result.get("sources") is not None:
-                sources += tool_result.get("sources")
+                sources += [source for source in tool_result.get("sources") if source.name not in {source.name for source in sources}]
 
         return State(messages=outputs, sources=sources)

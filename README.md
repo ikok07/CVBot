@@ -15,6 +15,7 @@ A sophisticated AI-powered personal assistant backend designed to provide seamle
 - **Framework**: FastAPI
 - **Agent**: LangGraph
 - **Database**: PostgreSQL + ChromaDB (vector storage)
+- **Cache/Rate Limiting**: Redis
 - **Authentication**: Clerk
 - **OCR**: Docling with EasyOCR
 - **Monitoring**: Opik
@@ -42,18 +43,19 @@ A sophisticated AI-powered personal assistant backend designed to provide seamle
 The CVBot Backend is organized into modular routes under the `/api/v1` base endpoint. Below is an overview of the key routes and their functionalities:
 
 - **/vector-store**: Manages document storage and retrieval in the vector database.
-    - `POST /vector-store/store-files`: Uploads and processes documents for storage.
-    - `POST /vector-store/semantic-search`: Performs semantic search across stored documents.
-    - `GET /vector-store/retrieve-files`: Lists all processed files in the vector store.
-    - `GET /vector-store/retrieve-embeddings?filename=...`: Retrieves embeddings for a specific file.
-    - `DELETE /vector-store/delete-files`: Removes specified files from the vector database.
+  - `POST /vector-store/store-files`: Uploads and processes documents for storage.
+  - `POST /vector-store/semantic-search`: Performs semantic search across stored documents.
+  - `GET /vector-store/retrieve-files`: Lists all processed files in the vector store.
+  - `GET /vector-store/retrieve-embeddings?filename=...`: Retrieves embeddings for a specific file.
+  - `DELETE /vector-store/delete-files`: Removes specified files from the vector database.
 - **/projects**: Handles project-related operations for managing your portfolio.
-    - `GET /projects`: Retrieves a list of all projects.
-    - `POST /projects`: Adds a new project to the database.
-    - `DELETE /projects/{project_id}`: Deletes a project by its ID.
+  - `GET /projects`: Retrieves a list of all projects.
+  - `POST /projects`: Adds a new project to the database.
+  - `DELETE /projects/{project_id}`: Deletes a project by its ID.
 - **/chatbot**: Facilitates interaction with the AI-powered chatbot.
-    - `POST /chatbot/invoke`: Sends a user message to the AI agent for processing.
-    - `GET /chatbot/history?session_id=...`: Retrieves the conversation history for a given session.
+  - `POST /chatbot/invoke`: Sends a user message to the AI agent for processing. **Rate limited to 20 requests per minute per user** to ensure fair usage and prevent abuse.
+  - `GET /chatbot/history?session_id=...`: Retrieves the conversation history for a given session.
+
 ---
 **`vector-store` and `projects` routes are secured with Clerk authentication.**
 
@@ -87,13 +89,13 @@ The LangGraph-powered agent offers:
 ## 🔐 Security
 
 - **Authentication**: Clerk-based user authentication for secure access.
-- **API Security**: Rate limiting and robust input validation to prevent abuse.
+- **API Security**: Rate limiting (e.g., 20 requests per minute for `/chatbot/invoke`, stored in Redis) and robust input validation to prevent abuse.
 
 ## 💻 Installation
 
 1. Navigate to the `deployment` folder.
-2. Copy `.env.example` to `.env` and configure the required environment variables.
-3. Run `docker compose up` to start the application.
+2. Copy `.env.example` to `.env` and configure the required environment variables, including Redis connection settings.
+3. Run `docker compose up` to start the application, including the Redis container.
 4. Docker containers will initialize, with the NGINX container exposing port 80 to the host's port 8081 (configurable in `docker-compose.yaml`).
 5. Access the application via `localhost:8081` or set up a reverse proxy pointing to `localhost:8081`.
 

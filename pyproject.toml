@@ -21,6 +21,7 @@ dependencies = [
     "pypdf2==3.0.1",
     "python-dotenv==1.1.1",
     "rank-bm25==0.2.2",
+    "redis==6.4.0",
     "svix==1.75.0",
     "tortoise-orm==0.25.1",
 ]

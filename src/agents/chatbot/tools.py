@@ -42,7 +42,7 @@ def semantic_search(queries: list[str]) -> CustomToolResponse:
             "query": queries[index],
             "results": [asdict(doc) for doc in result]
         } for index, result in enumerate(results)],
-        sources=[AgentSource(name="Vector Store", url=None)]
+        sources=[AgentSource(name=f"Vector Store", url=None)]
     )
 
 @tool

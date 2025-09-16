@@ -1,11 +1,12 @@
 import asyncio
 import json
 import os
+import pprint
 import time
 from typing import Annotated
 
 from fastapi import APIRouter, Body
-from fastapi.params import Query
+from fastapi.params import Query, Depends
 from langchain_core.messages import HumanMessage, AIMessage, AIMessageChunk
 from starlette import status
 from starlette.responses import StreamingResponse
@@ -19,6 +20,7 @@ from src.models.body.chatbot import ChatbotInvokeBody
 from src.models.db import MessageSource, MessageSourceSchema
 from src.models.errors.api import APIError
 from src.models.responses.generic import GenericResponse
+from src.routes.dependencies.rate_limit import rate_limit
 from src.utils.message_to_role import message_to_role
 
 router = APIRouter()
@@ -27,14 +29,13 @@ async def test():
     time.sleep(4)
 
 @router.post("/invoke")
-async def invoke_chatbot(body: Annotated[ChatbotInvokeBody, Body()]):
+async def invoke_chatbot(body: Annotated[ChatbotInvokeBody, Body()], _ = Depends(rate_limit(limit=0, window_seconds=60))):
 
     if len(body.message) == 0:
         raise APIError(
             status_code=status.HTTP_400_BAD_REQUEST,
             message="Message should not be empty!"
         )
-
 
     async def generate_response():
         try:
