@@ -35,7 +35,7 @@ services:
       - ANONYMIZED_TELEMETRY=False
     env_file: .env
     volumes:
-      - chroma:/data
+      - chroma:/chroma/chroma
       - ./chroma/config.yaml:/config.yaml
     networks:
       - app-network
