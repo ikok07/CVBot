@@ -19,7 +19,9 @@ from src.models.app_state import app_state
 from src.models.body.chatbot import ChatbotInvokeBody
 from src.models.db import MessageSource, MessageSourceSchema
 from src.models.errors.api import APIError
+from src.models.i18n.supported_languages import SupportedLanguage
 from src.models.responses.generic import GenericResponse
+from src.routes.dependencies.locale_parser import locale_parser
 from src.routes.dependencies.rate_limit import rate_limit
 from src.utils.message_to_role import message_to_role
 
@@ -82,11 +84,14 @@ async def invoke_chatbot(body: Annotated[ChatbotInvokeBody, Body()], _ = Depends
     )
 
 @router.get("/history")
-async def get_history(session_id: Annotated[str, Query()]):
+async def get_history(session_id: Annotated[str, Query()], language = Depends(locale_parser)):
     messages = await app_state.memory.aget({"configurable": {"thread_id": session_id}})
 
     if not messages:
-        default_message = os.getenv("DEFAULT_CHATBOT_MESSAGE", "Hello there!")
+        default_message = os.getenv(
+            "DEFAULT_CHATBOT_MESSAGE_BG" if language == SupportedLanguage.bg else "DEFAULT_CHATBOT_MESSAGE_EN",
+            "Hello there!"
+        )
         return GenericResponse(data=[{"id": "default", "role": "assistant", "content": default_message, "sources": []}])
 
     messages_dict = [
