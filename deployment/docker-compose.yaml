@@ -5,7 +5,7 @@ services:
     env_file: .env
     container_name: postgresql
     volumes:
-      - ./postgresql/data:/var/lib/postgresql/data
+      - postgresql:/var/lib/postgresql/data
     networks:
       - app-network
     healthcheck:
@@ -35,7 +35,7 @@ services:
       - ANONYMIZED_TELEMETRY=False
     env_file: .env
     volumes:
-      - ./chroma/data:/data
+      - chroma:/data
       - ./chroma/config.yaml:/config.yaml
     networks:
       - app-network
@@ -78,3 +78,9 @@ services:
 networks:
   app-network:
     driver: bridge
+
+volumes:
+  postgresql:
+    external: true
+  chroma:
+    external: true
