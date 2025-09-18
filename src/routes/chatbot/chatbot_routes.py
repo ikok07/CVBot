@@ -73,7 +73,12 @@ async def invoke_chatbot(body: Annotated[ChatbotInvokeBody, Body()], _ = Depends
 
     return StreamingResponse(
         generate_response(),
-        media_type="text/event-stream"
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no"
+        }
     )
 
 @router.get("/history")
