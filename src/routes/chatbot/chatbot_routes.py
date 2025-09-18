@@ -29,7 +29,7 @@ async def test():
     time.sleep(4)
 
 @router.post("/invoke")
-async def invoke_chatbot(body: Annotated[ChatbotInvokeBody, Body()], _ = Depends(rate_limit(limit=0, window_seconds=60))):
+async def invoke_chatbot(body: Annotated[ChatbotInvokeBody, Body()], _ = Depends(rate_limit(limit=20, window_seconds=60))):
 
     if len(body.message) == 0:
         raise APIError(
