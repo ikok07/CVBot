@@ -7,4 +7,5 @@ from operator import add
 
 class State(MessagesState):
     sources: list[AgentSource]
+    question_suggestions: list[str]
     pass

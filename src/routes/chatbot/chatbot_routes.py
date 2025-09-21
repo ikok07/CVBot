@@ -11,7 +11,7 @@ from langchain_core.messages import HumanMessage, AIMessage, AIMessageChunk
 from starlette import status
 from starlette.responses import StreamingResponse
 
-from src.agents.chatbot.agent import chatbot_graph
+from src.agents.chatbot.agent import chatbot_graph, generate_response
 from src.agents.chatbot.state import State
 from src.agents.chatbot.tools import get_all_projects
 from src.models.agent.agent_source import AgentSource
@@ -32,49 +32,14 @@ async def test():
 
 @router.post("/invoke")
 async def invoke_chatbot(body: Annotated[ChatbotInvokeBody, Body()], _ = Depends(rate_limit(limit=20, window_seconds=60))):
-
     if len(body.message) == 0:
         raise APIError(
             status_code=status.HTTP_400_BAD_REQUEST,
             message="Message should not be empty!"
         )
 
-    async def generate_response():
-        try:
-            async for chunk, metadata in app_state.graph.astream(
-                    State(
-                        messages=[HumanMessage(content=body.message)],
-                        sources=[]
-                    ),
-                    stream_mode="messages",
-                    config={"configurable": {"thread_id": body.session_id}, "callbacks": [app_state.tracer]},
-            ):
-                if not isinstance(chunk, AIMessageChunk):
-                    continue
-                message_chunk: AIMessageChunk = chunk
-                if message_chunk.content :
-                    yield f"data: {json.dumps({"content": message_chunk.content, "type": "content"}, ensure_ascii=False)}\n\n"
-
-            final_state = await app_state.graph.aget_state(config={"configurable": {"thread_id": body.session_id}})
-
-            if "sources" in final_state.values:
-                sources: list[AgentSource] = final_state.values["sources"]
-
-                await asyncio.gather(
-                    *[MessageSource(name=source.name, url=source.url, message_id=final_state.values["messages"][-1].id).save() for source in sources]
-                )
-
-                if sources:
-                    yield f"data: {json.dumps({"content": [source.model_dump() for source in sources], "type": "sources"})}\n\n"
-
-        except Exception as e:
-            print("Chatbot message generator method failed!")
-            print(e)
-            yield f"data: {json.dumps({"content": "Something went wrong with the response!", "type": "error"})}\n\n"
-
-
     return StreamingResponse(
-        generate_response(),
+        generate_response(message=body.message, thread_id=body.session_id),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",

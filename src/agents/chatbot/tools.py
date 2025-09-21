@@ -6,6 +6,7 @@ from langchain_core.tools import tool
 
 from src.models.agent.agent_source import AgentSource
 from src.models.agent.custom_tool_response import CustomToolResponse
+from src.models.app_state import app_state
 from src.models.db import Project, ProjectSchema
 from src.models.services.vector_store import VectorStore
 
@@ -16,7 +17,12 @@ def send_notification_tool(text: str) -> CustomToolResponse:
     :param text: Message informing me about the specific question that couldn't be answered
     """
     try:
-        requests.post(os.getenv("PUSHOVER_URL"), data={"token": os.getenv("PUSHOVER_TOKEN"), "user": os.getenv("PUSHOVER_USER"), "message": text})
+        app_state.mailer.send_email(
+            from_addr=os.getenv("CHATBOT_NOTIFICATION_SENDER_EMAIL"),
+            to_addr=os.getenv("CHATBOT_NOTIFICATION_RECIPIENT_EMAIL"),
+            subject="Чатботът не разполага с някаква информация",
+            msg=text
+        )
         return CustomToolResponse(data={"status": "success"}, sources=None)
     except Exception as e:
         return CustomToolResponse(data={"status": "fail", "error": e}, sources=None)

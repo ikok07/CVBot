@@ -5,6 +5,7 @@ from langgraph.graph.state import CompiledStateGraph
 from opik.integrations.langchain import OpikTracer
 from redis import Redis
 
+from src.models.services.mailer import Mailer
 
 @dataclass
 class AppState:
@@ -13,5 +14,6 @@ class AppState:
     graph: CompiledStateGraph = None
     tracer: OpikTracer = None
     redis_store: Redis = None
+    mailer: Mailer = None
 
 app_state = AppState()

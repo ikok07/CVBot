@@ -1,4 +1,6 @@
 import os
+import smtplib
+import ssl
 from contextlib import asynccontextmanager
 
 import redis
@@ -12,6 +14,7 @@ from tortoise import Tortoise
 from src.agents.chatbot.agent import chatbot_graph
 from src.config import TORTOISE_CONFIG
 from src.models.app_state import app_state
+from src.models.services.mailer import Mailer
 
 
 @asynccontextmanager
@@ -38,6 +41,8 @@ async def lifespan(app: FastAPI):
 
         app_state.redis_store.ping()
 
+        app_state.mailer = Mailer()
+
         print("Application initialized")
         yield
     except RedisConnectionError as e:
@@ -52,5 +57,9 @@ async def lifespan(app: FastAPI):
     finally:
         await Tortoise.close_connections()
         await app_state.db_conn.close()
+
         if app_state.redis_store is not None:
             app_state.redis_store.close()
+
+        if app_state.mailer is not None:
+            app_state.mailer.disconnect()
